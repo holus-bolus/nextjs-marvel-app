@@ -1,95 +1,52 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+import styles from './page.module.css';
+import md5 from 'md5';
+import Link from 'next/link'; // Import the Link component
 
 export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    const publicKey = '05055e60346d1b1668ad50134bcbabd4';
+    const privateKey = '17f5d4f21719eb6d670b0db4cde5a61d6164dfe8';
+    const apiBaseURL = 'https://gateway.marvel.com/v1/public';
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+    function createURL() {
+        const ts = Date.now();
+        const hash = md5(ts + privateKey + publicKey);
+        const url = `${apiBaseURL}/characters?ts=${ts}&apikey=${publicKey}&hash=${hash}`;
+        return url;
+    }
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+    const fetchData = async () => {
+        try {
+            const url = createURL();
+            const response = await fetch(url);
+            console.log('Response status:', response.status);
+            if (response.ok) {
+                const data = await response.json();
+                const characters = data.data.results;
+                console.log(characters);
+                // Render the characters on the page
+                const characterList = characters.map((character) => (
+                    <li key={character.id}>
+                        {/* Use the Link component to create a link to the character's page */}
+                        <Link href="/characters/[id]" as={`/characters/${character.id}`} legacyBehavior>
+                            <a>{character.name}</a>
+                        </Link>
+                    </li>
+                ));
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
+                // Render the character list on the page
+                return (
+                    <main className={styles.main}>
+                        <h1 style={{ color: 'white' }}>Hello world</h1>
+                        <ul>{characterList}</ul>
+                    </main>
+                );
+            } else {
+                console.error('API request failed with status:', response.status);
+            }
+        } catch (error) {
+            console.error('An error occurred:', error);
+        }
+    };
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+    return fetchData();
 }
